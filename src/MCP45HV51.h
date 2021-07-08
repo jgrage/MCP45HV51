@@ -45,11 +45,8 @@
 #ifndef _AD5724_H
 #define _AD5724_H
 
-/**
- * Test
- */
-#define DEFAULT_ADDRESS 0b0111100
 
+#define DEFAULT_ADDRESS 0b0111100
 
 
 class MCP45HV51 {

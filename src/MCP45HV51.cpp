@@ -47,12 +47,18 @@
 #include "MCP45HV51.h"
 
 /**
- * Test
+ * Init a MCP45HV51 object. Make sure the hardware i2c interface is enabled before calling any methods.
+ * @param i2c_address Adress of the selected chip. The two least significant bits are set by connecting the A0 and A1 pins to DGND or VL.
  */
 MCP45HV51::MCP45HV51(uint8_t i2c_address){
 	address = i2c_address;
 }
 
+/**
+ * Send a command and its argument to the chip.
+ * @param command Command byte containing the register address and the command id (datasheet pages 56-57)
+ * @param data Argument
+ */
 void MCP45HV51::transmit(uint8_t command, uint8_t data){
 	Wire.beginTransmission(address);
 	Wire.write(command);
@@ -60,58 +66,89 @@ void MCP45HV51::transmit(uint8_t command, uint8_t data){
 	Wire.endTransmission();
 }
 
+/**
+ * Send a command with no argument to the chip.
+ * @param command Command byte containing the register address and the command id (datasheet pages 56-57)
+ */
 void MCP45HV51::transmit(uint8_t command){
 	Wire.beginTransmission(address);
 	Wire.write(command);
 	Wire.endTransmission();
 }
 
+/**
+ * Read data from the chip.
+ * @param command Command byte containing the register address and the command id (datasheet pages 56-57)
+ * @return response Signed integer containing either a positive value between 0 and 255 or -1 if the command failed
+ */
 int16_t MCP45HV51::receive(uint8_t command){
 	uint8_t count = 0;
-	int16_t response = -1;		// ensure that response is negative (invalid) if Wire is not available and while loop will not be entered or the transmission is not complete.
+	int16_t response = -1;      // ensure that response is negative (invalid) if Wire is not available and while loop will not be entered or the transmission is not complete.
 	
-	Wire.beginTransmission(address);	// select device to be read
-	Wire.write(command);				// select memory location to be read by issuing a write command
-	Wire.endTransmission(false);		// send repeated start bit. no data will be transmitted
-	Wire.requestFrom(address, 2);		// request data from previously accessed memory location (write bit is now cleared). First byte is always 0 (see manual). Second byte contains the 8 bit value.
+	Wire.beginTransmission(address);    // select device to be read
+	Wire.write(command);                // select memory location to be read by issuing a write command
+	Wire.endTransmission(false);        // send repeated start bit. no data will be transmitted
+	Wire.requestFrom(address, 2);       // request data from previously accessed memory location (i2c write bit is now cleared). The first byte of the response is always 0 (see manual).
 	
 	while(Wire.available()){
 		uint8_t byte = Wire.read();
-		
+        
 		// second byte contains the data we want
 		if(count == 1){
-			response = (int16_t)byte;	// cast to unsigned int
+			response = (int16_t)byte;   // cast to signed 16bit int
 		}
 		count++;
 	}
 	return response;
 }
 
+/**
+ * Write value to the wiper register
+ * @param data Value between 0 and 255
+ */
 void MCP45HV51::set(uint8_t data){
 	command_byte = 0b00000000;
 	transmit(command_byte, data);
 }
 
+/**
+ * Set the terminal connection register. For more datails see datasheet page 36
+ * @param data 8bit tcon register
+ */
 void MCP45HV51::set_tcon(uint8_t data){
 	command_byte = 0b01000000;
 	transmit(command_byte, data);
 }
 
+/**
+ * Increment the wiper register
+ */
 void MCP45HV51::increment(void){
 	command_byte = 0b00000100;
 	transmit(command_byte);
 }
 
+/**
+ * Decrement the wiper register
+ */
 void MCP45HV51::decrement(void){
 	command_byte = 0b00001000;
 	transmit(command_byte);
 }
 
+/** 
+ * Get the wiper register value
+ * @return signed integer containing the value between 0 and 255 or -1 in case of an error
+ */
 int16_t MCP45HV51::get(void){
 	command_byte = 0b00001100;
 	return receive(command_byte);
 }
 
+/** 
+ * Get the terminal connection register value
+ * @return signed integer containing the value or -1 in case of an error
+ */
 int16_t MCP45HV51::get_tcon(void){
 	command_byte = 0b01001100;
 	return receive(command_byte);
