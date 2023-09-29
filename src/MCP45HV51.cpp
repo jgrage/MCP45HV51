@@ -88,7 +88,7 @@ int16_t MCP45HV51::receive(uint8_t command){
 	Wire.beginTransmission(address);    // select device to be read
 	Wire.write(command);                // select memory location to be read by issuing a write command
 	Wire.endTransmission(false);        // send repeated start bit. no data will be transmitted
-	Wire.requestFrom(address, 2);       // request data from previously accessed memory location (i2c write bit is now cleared). The first byte of the response is always 0 (see manual).
+	Wire.requestFrom(address, (uint8_t) 2);       // request data from previously accessed memory location (i2c write bit is now cleared). The first byte of the response is always 0 (see manual).
 	
 	while(Wire.available()){
 		uint8_t byte = Wire.read();
